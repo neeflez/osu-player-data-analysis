@@ -103,6 +103,9 @@ Podsumowując nasze wstępne analizy doszliśmy do takich wniosków:
 
 - Kwestia "mindblocka" i strategii gry: wstępne przeanalizowanie danych sugeruje, że "play more" nie zawsze przekłada się na lepsze wyniki. Dalsze analizy, w tym analiza porządkowania liniowego oraz analizy skupień, pozwolą nam jasno odpowiedzieć na pytanie czy granie więcej oznacza lepsze wyniki.
 
+
+W kolejnych krokach skupimy się na bardziej szczegółowej analizie, aby zbudować własny ranking graczy oraz utworzyć pewien podział naszych danych na graczy rankingowych oraz turniejowych.
+
 2. Porządkowanie liniowe
 
 ```{r}
