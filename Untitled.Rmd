@@ -1,26 +1,49 @@
 ---
-title: "OsuPlayers test"
-output: html_document
-date: "2024-11-03"
+title: "Analiza graczy Osu!"
+output:
+  html_document:
+    css: styles.css
+date: "2024-11-05"
+ 
 ---
+<img src="agh.jpg" alt="Logo agh" style="display: block; margin-left: auto; margin-right: auto; width: 200px;">
+<br><br><br><br><br>
+<p style="text-align: center;">
+  Akademia Górniczo-Hutnicza im. Stanisława Staszica w Krakowie<br>
+  Wydział Zarządzania<br>
+  Statystyczna analiza danych<br><br>
+  
+  Projekt: Analiza graczy Osu!<br><br>
+  
+  Miłosz Polinceusz<br>
+  Statystyczna analiza danych<br>
+  Studia niestacjonarne<br>
+  Semestr V<br><br>
+</p>
+<br><br><br><br><br><br>
 
-Odczyt danych:
+
+# 1. Analiza danych.
+Odczyt danych z pliku csv:
 ```{r}
 file_path <- "osuPlayers.csv"
 osu_data <- read.csv(file_path, header = TRUE, sep = ",")
 osu_data$celnosc <- as.numeric(sub("%", "", osu_data$celnosc))
-head(osu_data)
 ```
-# 1. Analiza danych.
+
 W ramach wstępnej analizy przeprowadzimy kilka prostych działań na naszych danych, aby odpowiedzieć na kluczowe pytania. Spodziewamy się, że część graczy mogła doświadczyć zablokowania swojego konta, co może wprowadzić niepożądane zakłócenia w naszych wynikach. W związku z tym, usuniemy wartości odstające, które jasno wskażą, których graczy należy wykluczyć z analizy.
 
 Dodatkowo, zbadamy korelację między liczbą zdobytych medali a celnością graczy. Wiele osób zakłada, że zawodnicy turniejowi, zdobywający największą liczbę medali, charakteryzują się większą regularnością, co powinno przekładać się na wyższą celność. Przeanalizujemy, czy nasze dane potwierdzają tę tezę.
 
 Sprawdzimy także, czy popularne hasło „play more” przekłada się na lepsze wyniki. Zbadamy, czy niektórzy gracze zmagają się z tzw. „mindblockiem”, który może utrudniać im osiąganie lepszych rezultatów.
 
-## 1.1 Podstawowe statystyki
 ```{r}
-summary(osu_data)
+library(knitr)
+library(kableExtra)
+
+osu_data %>%
+  kable("html", escape = FALSE) %>%
+  kable_styling(full_width = FALSE)
 #odchylenia standardowe
 sd(osu_data$`liczba.zagran`) 
 sd(osu_data$`liczba.pp`)
@@ -37,6 +60,7 @@ text(osu_data$`liczba.zagran`, osu_data$`liczba.pp`,
      labels = osu_data$`nazwa.gracza`, pos = 4, cex = 0.7, col = "red")
 
 ```
+<br>
 Na wykresie widać, że gracze "WhiteCat", "femboygaming" oraz "Chicony" mają nadzwyczaj małą liczbę zagrań jak na zawodników znajdujących się w top 50 na świecie. Zgadza się, są to osoby, które wcześniej otrzymały bana, co może wpłynąć na naszą analizę. Odrzucimy ich dane, aby nie zaburzały dalszych wyników.
 ```{r}
 osu_data <- subset(osu_data, !nazwa.gracza %in% c("WhiteCat", "femboygaming", "Chicony"))
@@ -53,8 +77,8 @@ plot(osu_data$`liczba.zagran`, osu_data$`ilosc.medali`,
 text(osu_data$`liczba.zagran`, osu_data$`ilosc.medali`, 
      labels = osu_data$`nazwa.gracza`, pos = 4, cex = 0.7, col = "blue")
 ```
+<br>
 Niestety, jak pokazuje powyższy wykres, gracze "Rafis", "sytho" oraz "kazamabc" nie są zawodnikami turniejowymi, co skutkuje dużą ilością czasu spędzanego na grze bez znaczących efektów. Zjawisko znane w społeczności osu jako "mindblock" może przeszkadzać w osiąganiu lepszych wyników, a mimo większej liczby rozegranych gier, niektórzy gracze mogą nie poprawić swojego rankingu. Na wykresie dostrzegamy również nowych zawodników: "MALISZEWSKI", "FlyingTuna" oraz "xootynator", którzy wydają się koncentrować głównie na grach turniejowych. Na wcześniejszym wykresie ich nazwy użytkownika były trudne do zauważenia.
-
 
 Sprawdźmy teraz, czy gracze turniejowi rzeczywiście charakteryzują się wyższą celnością w porównaniu do tych, którzy koncentrują się na zdobywaniu punktów pp.
 ```{r}
@@ -73,6 +97,7 @@ boxplot(celnosc ~ typ_gracza, data = osu_data_klasy,
         ylab = "Celnosc",
         col = c("lightblue", "lightgreen"))
 ```
+<br>
 Wyniki potwierdzają naszą tezę: gracze turniejowi mają wyższą celność. Różnica jest zaskakująco duża. Jak pokazuje wykres, dolny kwartyl celności graczy turniejowych osiąga poziom mediany celności graczy rankingowych, co sugeruje, że nawet najmniej celni zawodnicy w grupie turniejowej osiągają wyniki porównywalne z medianą graczy rankingowych. To wskazuje na wyraźną przewagę graczy turniejowych w zakresie celności, co może wynikać z intensywniejszego treningu oraz większej ekspozycji na rywalizację w turniejach.
 
 Wracając do pełnej próbki danych, sprawdźmy korelację między liczbą zagrań a punktami pp. Wciąż jesteśmy ciekawi, czy większa liczba rozegranych gier przekłada się na lepsze wyniki.
@@ -99,23 +124,27 @@ korelacja_pp_zagran <- cor(gracze_rankingowi$liczba.pp, gracze_rankingowi$liczba
 cat("Korelacja między punktami pp a ilością zagran dla graczy rankingowych:", korelacja_pp_zagran, "\n")
 
 ```
+<br>
 Ujemna korelacja między liczbą medali a liczbą zagrań sugeruje, że graczom turniejowym wystarcza mniej zagrań, aby osiągać dobre wyniki, podczas gdy wśród graczy rankingowych nie widzimy wyraźnej zależności. Prawdopodobnie oznacza to, że poświęcanie większej ilości czasu na grę nie prowadzi do znaczącego wzrostu punktów pp. Na podstawie uzyskanych wyników korelacji można zauważyć, że system rankingowy, który faworyzuje zdobywanie punktów pp, może niewłaściwie określać poziom umiejętności graczy. Dlatego w dalszej części analizy, wykorzystując porządkowanie liniowe danych, postaramy się stworzyć własny ranking. Dodatkowo, podczas analizy skupień podzielimy graczy na grupy, aby zbadać zależności między ich stylami gry.
 
 Aby kontynuować analizę danych, spróbujemy zwizualizować nasze dane na kilka sposobów, co pomoże nam lepiej je zrozumieć.
 ```{r}
 hist(osu_data$`liczba.pp`, main="Rozkład punktów pp", xlab="Liczba pp")
 ```
+<br>
 Na powyższym histogramie widzimy rozkład punktów pp, który bardzo przypomina rozkład chi2. Nasz rozkład cechuje się dużą asymetrią prawostronną. Świadczy to o tym, że w rankingu top 50 mogą znajdować się gracze, którzy osiągają bardzo wysokie wyniki, co prowadzi do koncentracji danych w górnej części rozkładu. W takim przypadku, wiele osób może mieć wyniki bliskie średniej, a tylko nieliczni gracze osiągają wyniki znacznie powyżej średniej, co tworzy charakterystyczny kształt. Dodatkowo punkty pp w osu! są obliczane na podstawie złożoności rozgrywek, osiągniętych wyników oraz dokładności gracza. Taki system może sprzyjać tworzeniu większych wartości punktowych dla wybitnych graczy, co może skutkować kształtem asymetrią rozkładu.
 
 
 ```{r}
 hist(osu_data$`liczba.zagran`, main="Rozkład liczby zagrań", xlab="Liczba zagrań")
 ```
+<br>
 Histogram rozkładu liczby zagrań potwierdza to, co zauważyliśmy wcześniej na wykresie punktowym. Większość graczy z top 50 ma liczbę zagrań w okolicach 150 000. Zakładając, że średnia długość jednego zagrania wynosi 2 minuty, aby osiągać wybitne wyniki, należy poświęcić co najmniej 5 000 godzin na grę, co odpowiada aż 208 dniom nieprzerwanego grania.
 
 ```{r}
 boxplot(osu_data$`celnosc`, main="Boxplot Celności", ylab="Celność (%)")
 ```
+<br>
 Na wykresie pudełkowym doskonale widać, że mediana celności graczy mieści się między 98% a 98,5%. Obszar między kwartylem 3 a medianą jest widocznie większy od obszaru między kwartylem 1 a medianą. Świadczy to o tym, że gracze w top 50 w większości mają wysoką celność. Oczywiście są też gracze o celności 97% oraz 99,5%, ale są to wartości odstające. Możemy zakładać, że 50% graczy posiada celność od 97,7% do 98,9%.
 
 Podsumowując nasze wstępne analizy, doszliśmy do takich wniosków:
@@ -185,11 +214,14 @@ osu_data_sorted$nowy.ranking <- seq_len(nrow(osu_data_sorted))
 
 # Utworzenie kolumny nowy_ranking
 osu_data_sorted <- osu_data_sorted[, c("nowy.ranking", setdiff(names(osu_data_sorted), c("nowy.ranking", "ranking")))]
+osu_data_sorted <- osu_data_sorted[, setdiff(names(osu_data_sorted), c("Ocena.SS", "Ocena.S", "Ocena.A"))]
 
+library(knitr)
+library(kableExtra)
 
-# Wyświetlenie wyników
-print(osu_data_sorted,  row.names = FALSE)
-
+osu_data_sorted %>%
+  kable("html", escape = FALSE) %>%
+  kable_styling(full_width = FALSE)
 ```
 Po zaimplementowaniu porządkowania liniowego na naszych danych możemy zauważyć, że na pierwszym miejscu znajduje się gracz o nazwie użytkownika "MALISZEWSKI". Jest to niewątpliwie najlepszy zawodnik turniejowy, posiadający aż 55 medali. Jak widać, poprzedni ranking niesłusznie faworyzował graczy z największą ilością punktów pp. Choć punkty pp są istotnym stymulantem, motywującym graczy do ciągłego postępu, ich faworyzowanie może być krzywdzące dla zawodników, którzy dysponują szerszym zakresem umiejętności niż tylko zdobywanie punktów. Wśród pierwszej dziesiątki wyróżniają się tacy gracze jak "xootynator" czy "[Karcher]", którzy w poprzednim rankingu zajmowali odpowiednio miejsca 39 i 38.
 
@@ -201,7 +233,13 @@ Najpierw, przy użyciu metody łokcia, określimy liczbę klastrów dla naszego 
 
 ```{r}
 library(factoextra)
-
+library(ggplot2)
+library(magrittr)
+osu_data <- subset(osu_data, !nazwa.gracza %in% c("WhiteCat", "femboygaming", "Chicony"))
+osu_data_cluster <- osu_data %>%
+  dplyr::select(celnosc, liczba.zagran, liczba.pp, ilosc.medali)
+osu_data_normalized <- scale(osu_data_cluster)
+set.seed(123)
 # Zakres klastrów
 k_values <- 1:10
 
@@ -211,22 +249,16 @@ fviz_nbclust(osu_data_normalized, kmeans, method = "wss") +
   theme_minimal()
 
 ```
+<br>
 Na podstawie powyższego wykresu można stwierdzić, że optymalnym wyborem będą 3 klastry. Po ich wybraniu przechodzimy do dalszej analizy, wizualizując nasze dane przy użyciu metody k-średnich.
 ```{r}
-library(ggplot2)
-library(magrittr)
-osu_data <- subset(osu_data, !nazwa.gracza %in% c("WhiteCat", "femboygaming", "Chicony"))
-osu_data_cluster <- osu_data %>%
-  dplyr::select(celnosc, liczba.zagran, liczba.pp, ilosc.medali)
-osu_data_normalized <- scale(osu_data_cluster)
-set.seed(123)
+
 kmeans_result <- kmeans(osu_data_normalized, centers = 3, nstart = 20) #3 klastry
 osu_data$cluster <- as.factor(kmeans_result$cluster)
 fviz_cluster(kmeans_result, osu_data_cluster, geom = "text") +
   geom_text(aes(label = osu_data$nazwa.gracza), color = "black", size = 3)
 ```
-
-
+<br>
 Dane zostały podzielone na 3 grupy.
 
 Grupa nr 1 charakteryzuje się graczami o wysokiej liczbie punktów pp i zagrań, ale o niskiej celności. Są to niewątpliwie czołowi gracze rankingowi.
@@ -254,11 +286,14 @@ plot(ward_euclidean,
      hang = -1, 
      labels = osu_data$nazwa.gracza) # Zmienione etykiety
 ```
+<br>
 Rzeczywiście, potwierdzają się nasze wcześniejsze założenia. Po lewej stronie pierwsza gałąź charakteryzuje się graczami o wyższej celności oraz większej liczbie medali. Natomiast prawa strona obejmuje graczy o niższej celności i wyższej liczbie punktów rankingowych. 
 
 # 4.Podsumowując naszą analizę danych:
-- Graczy można podzielić na turniejowych i rankingowych.
-- Ranking oparty na punktach pp może być niewiarygodny w ocenie najlepszych graczy.
-- Zasada "play more" nie zawsze przynosi efekty; niektórzy gracze mogą zmagać się z "mindblockiem", co utrudnia postęp mimo dużego poświęcenia.
-- Aby osiągać światowe wyniki w grze Osu!, należy łączyć talent z dużym nakładem czasu.
-- Gracze pragnący poprawić swoją celność powinni skupić się na rozgrywkach turniejowych zamiast na zdobywaniu rankingu.
+W naszej analizie graczy osu! dokonaliśmy kilku istotnych obserwacji, które rzucają światło na złożoność osiąganych wyników w tej grze:<br>
+- Graczy można podzielić na turniejowych i rankingowych.<br>
+- Ranking oparty na punktach pp może być niewiarygodny w ocenie najlepszych graczy.<br>
+- Zasada "play more" nie zawsze przynosi efekty; niektórzy gracze mogą zmagać się z "mindblockiem", co utrudnia postęp mimo dużego poświęcenia.<br>
+- Aby osiągać światowe wyniki w grze Osu!, należy łączyć talent z dużym nakładem czasu.<br>
+- Gracze pragnący poprawić swoją celność powinni skupić się na rozgrywkach turniejowych zamiast na zdobywaniu rankingu.<br>
+
