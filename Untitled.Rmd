@@ -107,10 +107,64 @@ Podsumowując nasze wstępne analizy doszliśmy do takich wniosków:
 W kolejnych krokach skupimy się na bardziej szczegółowej analizie, aby zbudować własny ranking graczy oraz utworzyć pewien podział naszych danych na graczy rankingowych oraz turniejowych.
 
 2. Porządkowanie liniowe
+Patrząc na poprzednie wnioski możemy zauważyć, że aktualny ranking jest złą miarą umiejętności gracza. Utworzymy teraz nowy ranking, który będzie uwzględniał większą ilość zmiennych.
+
+Korzystając z zależności, że wykonanie najmniejszego błędu w jednym zagraniu skutkuje zmianą z oceny S na A, możemy utworzyć wskaźnik stresu. Będzie to stosunek ocen A do ocen S. W ten sposób za pomocą wskaźnika stresu sprawdzimy jak często gracze popełniają błędy w trakcie swoich zagrań. Tym wskaźnik stresu będzie niższy, tym sposób gry gracza będzie spokojniejszy. Skorzystamy z tego wskaźnika jako destymulanta. Chcemy aby wysoko w naszym rankingu byli gracze o niskim wskaźniku stresu.
+
+Załóżmy, że najlepszym graczem będzie osoba o najwyższej liczbie: punktów pp, medali, celności, oraz o najniższej ilości: wskaźnika stresu, liczbie zagrań.
+
+Dlaczego nie bierzemy pod uwagę Ocen SS? Ocena SS świadczy o celności jednego zagrania na 100%. W naszej analizie danych już bierzemy pod uwagę kryterium celności. Dodatkowo liczbą ocen SS można bardzo łatwo manipulować więc nie jest to miarodajny parametr w naszej analizie. 
+
+Dlaczego liczbe zagrań traktujemy jako destymulantę? Chcemy faworyzować w naszym rankingu graczy, którzy w krótszym czasie osiągneli lepsze wyniki.
 
 ```{r}
 
+# Dodanie kolumny wskaznik.radzenia.sobie.ze.stresem z zabezpieczeniem przed dzieleniem przez zero
+osu_data$wskaznik.stresu <- with(osu_data, ifelse(Ocena.A == 0, NA,  Ocena.A / Ocena.S))
+
+
+# Kopiujemy oryginalne dane, aby zachować je bez modyfikacji
+osu_data_original <- osu_data
+
+# Ustalmy stymulanty i destymulanty
+stimulants <- c("celnosc", "liczba.pp", "ilosc.medali")
+destimulants <- c("wskaznik.stresu", "liczba.zagran")
+
+# 1. Przekształcenie destymulantów na stymulanty w kopii danych
+osu_data[destimulants] <- lapply(osu_data[destimulants], function(x) max(x) - x)
+
+# 2. Standaryzacja danych
+standardized_data <- as.data.frame(scale(osu_data[, c(stimulants, destimulants)]))
+
+# 3. Wyznaczenie wzorca
+pattern <- apply(standardized_data, 2, max)
+
+# 4. Obliczenie odległości euklidesowej od wzorca
+distances <- apply(standardized_data, 1, function(row) sqrt(sum((row - pattern)^2)))
+
+# 5. Miara Hellwiga
+H_measure <- 1 - distances / max(distances)
+
+# Dodanie miary Hellwiga do kopii oryginalnych danych
+osu_data_original$Hellwig_measure <- H_measure
+
+# Posortowanie danych według miary Hellwiga
+osu_data_sorted <- osu_data_original[order(-osu_data_original$Hellwig_measure), ]
+
+# Dodanie kolumny "nowy ranking" jako kolejność według miary Hellwiga
+osu_data_sorted$nowy.ranking <- seq_len(nrow(osu_data_sorted))
+
+# Utworzenie kolumny nowy_ranking
+osu_data_sorted <- osu_data_sorted[, c("nowy.ranking", setdiff(names(osu_data_sorted), c("nowy.ranking", "ranking")))]
+
+
+# Wyświetlenie wyników
+print(osu_data_sorted,  row.names = FALSE)
+
 ```
+Po zaimplementowaniu porządkowania liniowego na naszych danych możemy zauważyć, że na pierwszym miejscu widnieje gracz o nazwie użytkownika "MALISZEWSKI". Jest to bez wątpienia najlepszy zawodnik turniejowy, ponieważ posiada aż 55 medali. Jak widać poprzedni ranking niesłusznie faworyzuje graczy o największej ilości punktów pp. Oczywiście punkty pp to bardzo ważna stymulanta, która motywuje graczy do ciagłego progressu, natomiast faworyzowanie jej może być krzywdzące dla graczy o szerszych umiejętnościach niż tylko zdobywanie punktów.
+
+
 3. Analiza skupień
 ```{r}
 
