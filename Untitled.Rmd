@@ -166,6 +166,22 @@ Po zaimplementowaniu porządkowania liniowego na naszych danych możemy zauważy
 
 
 3. Analiza skupień
-```{r}
+Tak jak już wcześniej zauważyliśmy nasze dane można podzielić na graczy turniejowych oraz rankingowych. Sprawdźmy czy taki podział jest zasadny. Pomoże nam to odpowiedzieć na pytanie czy granie więcej prowadzi do lepszych wyników czy nie?
 
+```{r}
+cv <- function(x) {
+  sd(x) / mean(x)  # Współczynnik zmienności
+}
+
+# Obliczanie współczynników zmienności dla wybranych zmiennych
+wspolczynniki_zmiennosci <- sapply(osu_data[, c("celnosc", "liczba.zagran", "liczba.pp", "Ocena.SS", "Ocena.S", "Ocena.A", "ilosc.medali")], cv)
+
+# Tworzenie ramki danych z wynikami
+wspolczynniki_zmiennosci_df <- data.frame(
+  zmienna = names(wspolczynniki_zmiennosci),
+  wspolczynnik_zmiennosci = wspolczynniki_zmiennosci
+)
+
+# Wyświetlanie wyników
+print(wspolczynniki_zmiennosci_df)
 ```
