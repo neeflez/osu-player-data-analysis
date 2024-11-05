@@ -8,9 +8,107 @@ Odczyt danych:
 ```{r}
 file_path <- "osuPlayers.csv"
 osu_data <- read.csv(file_path, header = TRUE, sep = ",")
+osu_data$celnosc <- as.numeric(sub("%", "", osu_data$celnosc))
 head(osu_data)
 ```
+1. Analiza danych.
+W naszej wstepnej analizie dzięki prostym działaniom na naszych danych odpowiemy sobie na kilka pytań. Spodziewamy się, że część graczy w swojej karierze dostało ban'a więc uwzględnienie takich graczy w naszej analizie może nieco zaburzyć wyniki. Wyeliminujemy więc wartości odstające, które jasno nam określą, których graczy powinniśmy odrzucić. Dodatkowo sprawdzimy korelację pomiędzy ilością medali, a celnością gracza. Wiekszość graczy zakłada, że gracze turniejowi, czyli gracze, którzy zdobywają największą ilość medali są bardziej "consistent" przez co mają większą celność. Sprawdzimy czy będzie to widać na naszych danych. Sprawdzimy również czy słynne hasło "play more", które oznacza, że gdy gramy więcej to osiągamy lepsze wyniki sprawdza się. Sprawdzimy, czy pewni gracze mogą borykać się z tzw. "mindblock'iem", który blokuje nas przed osiąganiem lepszych wyników.
 
+#TODO: dodaj wiek graczy do naszej próbki danych zeby sprawdzic czy wiek tez wplywa na wyniki
+
+1.1 Podstawowe statystyki
+```{r}
+summary(osu_data)
+#odchylenia standardowe
+sd(osu_data$`liczba.zagran`) 
+sd(osu_data$`liczba.pp`)
+```
+Wyniki odchyleń standardowych liczby zagrań sugerują nam, że wśród naszej próbki danych są gracze, którzy dostali ban'a w swojej karierze. Znajdźmy takich graczy i wyeliminujmy ich z naszej analizy. Skorzystamy z wykresu scatter aby lepiej dostrzec, którzy gracze byli w przeszłości zbanowani.
+```{r}
+# Tworzenie wykresu rozrzutu
+plot(osu_data$`liczba.zagran`, osu_data$`liczba.pp`, 
+     xlab = "Liczba zagrań", ylab = "Liczba pp", 
+     main = "Liczba zagrań vs liczba pp", pch = 19, col = "blue")
+
+# Dodawanie nazw graczy do wykresu
+text(osu_data$`liczba.zagran`, osu_data$`liczba.pp`, 
+     labels = osu_data$`nazwa.gracza`, pos = 4, cex = 0.7, col = "red")
+
+```
+Jak widać na wykresie gracze "WhiteCat", "femboygaming" oraz "Chicony" mają nadzwyczaj małą ilość zagrań jak na graczy, którzy znajdują się w top 50 na świecie. Rzeczywiście tak jak zakładaliśmy są to osoby, które wcześniej były zbanowane, przez co mogą zaburzać naszą analizę. Odrzucimy ich aby, ich dane nie zaburzały naszej dalszej analizy. 
+```{r}
+osu_data <- subset(osu_data, !nazwa.gracza %in% c("WhiteCat", "femboygaming", "Chicony"))
+```
+Dodatkowo możemy zauważyć, że największe skupisko graczy najlepszych graczy na świecie jest wśród 150000 zagrań. Dobrze widać, też graczy, którzy pomimo bardzo dużej ilości zagrań nie mogą zdobyć większej ilości punktów pp. Są nimi: "Rafis", "sytho" oraz "kazamabc". Oczywiście może to wynikać z faktu, że ci gracze skupiają się bardziej na grze turniejowej niż, na zdobywaniu punktów pp. Sprawdźmy czy tak jest. Spójrzmy na stosunek zdobytych medali do ilości zagrań.
+```{r}
+# Wykres rozrzutu dla liczby medali a liczby zagrań
+plot(osu_data$`liczba.zagran`, osu_data$`ilosc.medali`, 
+     xlab = "Liczba zagrań", ylab = "Liczba medali", 
+     main = "Liczba medali vs liczba zagrań", 
+     pch = 19, col = "darkgreen", cex = osu_data$`liczba.zagran` / max(osu_data$`liczba.zagran`) * 2)
+
+# Dodanie nazw graczy
+text(osu_data$`liczba.zagran`, osu_data$`ilosc.medali`, 
+     labels = osu_data$`nazwa.gracza`, pos = 4, cex = 0.7, col = "blue")
+```
+Niestety jak widać na powyższym wykresie. Gracze: "Rafis", "sytho" oraz "kazambc" nie są graczami turniejowymi, więc spędzają bardzo dużo czasu na grze a ich wyniki są kiepskie w porównaniu do reszty graczy. Na tym wykresie możemy również zauważyć, że zaczęli się wyróżniać inni gracze. "MALISZEWSKI", "FlyingTuna" oraz "xootynator" jak widać skupiają się głównie na graniu turnieji. Na poprzednim wykresie ciężko było znaleźć ich nazwy użytkownika.
+
+Sprawdźmy teraz czy gracze turniejowi rzeczywiście posiadają większą celność, niż gracze, którzy skupiają się na zdobywaniu punktów pp.
+```{r}
+cor(osu_data$`liczba.zagran`, osu_data$`liczba.pp`)
+
+```
+Niska korelacja między liczbą zagrań a punktami pp. Oznacza to, że nie ma silnej zależności między liczbą zagrań a liczbą punktów pp. Innymi słowy, gracze, którzy grają więcej, niekoniecznie mają więcej punktów. Wydaje się, że inne czynniki mogą bardziej wpływać na osiągane wyniki, a liczba zagrań nie jest dobrym wskaźnikiem punktów. 
+
+Oczywiście zakładamy w tym porównaniu, że celem każdego gracza jest zdobycie jak największej ilości punktów. Takie założenie może nie być trafne. Sprawdźmy czy gracze turniejowi dzięki poświęconemu wiekszemu czasu na gre mogą cieszyć się lepszymi wynikami.
+
+```{r}
+cor(osu_data$`ilosc.medali`, osu_data$`liczba.zagran`)
+```
+Niestety tutaj też nie możemy dostrzec tej zależnosci. Prawdopodobnie jest to spowodowane faktem, że graczy możemy podzielić na graczy turniejowych oraz graczy rankingowych. W dalszej części analizy za pomocą porządkowania liniowego danych postaramy się utworzyć własny ranking graczy i określić czy osoby wyżej w naszym rankingu przez poświęcenie większej ilości czasu na gre mają lepsze wyniki. Dodatkowo podczas analizy skupień podzielimy graczy na dwie grupy i wtedy sprawdzimy czy słynne hasło "play more" jest uzasadnione. 
+```{r}
+cor(osu_data$`ilosc.medali`, osu_data$`celnosc`)
+```
+Korelacja między liczbą medali a celnością jest umiarkowana i dodatnia co oznacza, że istnieje pewna zależność: gracze, którzy zdobywają więcej medali, mają tendencję do osiągania wyższej celności. Ten wynik jest zgodny z naszymi wcześniejszymi założeniami.
+
+Aby zająć się dalszą analizą danych spróbujemy sobie zwizualizować nasze dane jeszcze na kilka sposobów aby lepiej je zrozumieć.
+```{r}
+hist(osu_data$`liczba.pp`, main="Rozkład punktów pp", xlab="Liczba pp")
+```
+Na powyższym histogramie widzimy rozkład punktów pp, który bardzo przypomina rozkład chi2. Nasz rozkład cechuje się dużą asymetrią prawostronną. Świadczy to o tym, że w rankingu top 50 mogą znajdować się gracze, którzy osiągają bardzo wysokie wyniki, co prowadzi do koncentracji danych w górnej części rozkładu. W takim przypadku, wiele osób może mieć wyniki bliskie średniej, a tylko nieliczni gracze osiągają wyniki znacznie powyżej średniej, co tworzy charakterystyczny kształt. Dodatkowo
+punkty pp w osu! są obliczane na podstawie złożoności mapy, osiągniętych wyników oraz dokładności gracza. Taki system może sprzyjać tworzeniu większych wartości punktowych dla wybitnych graczy, co może skutkować kształtem asymetrią rozkładu.
+
+
+```{r}
+hist(osu_data$`liczba.zagran`, main="Rozkład liczby zagrań", xlab="Liczba zagrań")
+```
+Histogram rozkładu liczby zagrań pokazuje nam dobrze to co już zauważyliśmy wcześniej na wykresie scatter. Wiekszość graczy w top 50 posiada liczbę zagrań w okolicy 150000. Zakładając, że średnia długość jednego zagrania trwa 2min to aby osiągać wyniki wybitne trzeba poświęcić na gre co najmniej 5000 godzin czyli, aż 208 dni ciągłęgo grania.
+
+```{r}
+boxplot(osu_data$`celnosc`, main="Boxplot Celności", ylab="Celność (%)")
+```
+Na wykresie pudełkowym doskonale widać, że mediana celności graczy mieści się między 98%, a 98.5%. Obszar między kwartylem 3 a medianą jest widocznie większy od obszaru między kwartylem 1 a medianą. Świadczy to o tym, że jednak gracze w top50 w wiekszości maja wysoką celność. Oczywiście są też gracze o celności 97% oraz celności 99.5% ale są to nasze wartości odstające. Możemy zakładać, że 50% graczy posiada celność od 97.7% do 98.9%.
+
+Podsumowując nasze wstępne analizy doszliśmy do takich wniosków:
+
+- Eliminacja graczy zbanowanych: Wyeliminowanie graczy takich jak "WhiteCat", "femboygaming" i "Chicony", którzy mieli nadzwyczaj małą ilość zagrań, poprawiło jakość naszych danych. Umożliwiło to dokładniejsze zrozumienie wyników pozostałych graczy.
+
+- Rozkład punktów pp: Rozkład punktów pp jest silnie asymetryczny, co sugeruje, że wśród najlepszych graczy znajdują się jednostki, które osiągają znacznie wyższe wyniki niż reszta. Wartości te mogą mieć duży wpływ na pozycje w rankingu, podczas gdy większość graczy osiąga wyniki bliskie średniej.
+
+- Korelacje: Niska korelacja między liczbą zagrań a punktami pp sugeruje, że większa ilość zagrań nie przekłada się automatycznie na lepsze wyniki punktowe. Wydaje się, że inne czynniki, takie jak umiejętności i talent, mają większy wpływ na osiągane rezultaty. Z drugiej strony, umiarkowana korelacja między liczbą medali a celnością wskazuje, że gracze, którzy zdobywają więcej medali, zazwyczaj osiągają wyższe wyniki w celności, co potwierdza nasze wcześniejsze przypuszczenia.
+
+- Rozkład liczby zagrań: Histogram pokazuje, że większość najlepszych graczy w top 50 ma liczbę zagrań w okolicy 150000. To może sugerować, że osiągnięcie wysokiego poziomu umiejętności wymaga dużego zaangażowania czasowego.
+
+- Analiza celności: Boxplot celności pokazuje, że większość graczy w top 50 ma wysoką celność, z medianą między 98% a 98.5%. Oznacza to, że nawet wśród najlepszych graczy, występują wartości odstające, ale generalnie celność jest na bardzo wysokim poziomie.
+
+- Kwestia "mindblocka" i strategii gry: wstępne przeanalizowanie danych sugeruje, że "play more" nie zawsze przekłada się na lepsze wyniki. Dalsze analizy, w tym analiza porządkowania liniowego oraz analizy skupień, pozwolą nam jasno odpowiedzieć na pytanie czy granie więcej oznacza lepsze wyniki.
+
+2. Porządkowanie liniowe
+
+```{r}
+
+```
+3. Analiza skupień
 ```{r}
 
 ```
