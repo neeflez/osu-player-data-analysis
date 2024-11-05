@@ -374,25 +374,25 @@ head(osu_data)</code></pre>
 ## 4           13
 ## 5           11
 ## 6            0</code></pre>
-<ol style="list-style-type: decimal">
-<li>Analiza danych. W naszej wstepnej analizie dzięki prostym działaniom
-na naszych danych odpowiemy sobie na kilka pytań. Spodziewamy się, że
-część graczy w swojej karierze dostało ban’a więc uwzględnienie takich
-graczy w naszej analizie może nieco zaburzyć wyniki. Wyeliminujemy więc
-wartości odstające, które jasno nam określą, których graczy powinniśmy
-odrzucić. Dodatkowo sprawdzimy korelację pomiędzy ilością medali, a
-celnością gracza. Wiekszość graczy zakłada, że gracze turniejowi, czyli
-gracze, którzy zdobywają największą ilość medali są bardziej
-“consistent” przez co mają większą celność. Sprawdzimy czy będzie to
-widać na naszych danych. Sprawdzimy również czy słynne hasło “play
-more”, które oznacza, że gdy gramy więcej to osiągamy lepsze wyniki
-sprawdza się. Sprawdzimy, czy pewni gracze mogą borykać się z tzw.
-“mindblock’iem”, który blokuje nas przed osiąganiem lepszych
-wyników.</li>
-</ol>
+<div id="analiza-danych." class="section level1">
+<h1>1. Analiza danych.</h1>
+<p>W naszej wstepnej analizie dzięki prostym działaniom na naszych
+danych odpowiemy sobie na kilka pytań. Spodziewamy się, że część graczy
+w swojej karierze dostało ban’a więc uwzględnienie takich graczy w
+naszej analizie może nieco zaburzyć wyniki. Wyeliminujemy więc wartości
+odstające, które jasno nam określą, których graczy powinniśmy odrzucić.
+Dodatkowo sprawdzimy korelację pomiędzy ilością medali, a celnością
+gracza. Wiekszość graczy zakłada, że gracze turniejowi, czyli gracze,
+którzy zdobywają największą ilość medali są bardziej “consistent” przez
+co mają większą celność. Sprawdzimy czy będzie to widać na naszych
+danych. Sprawdzimy również czy słynne hasło “play more”, które oznacza,
+że gdy gramy więcej to osiągamy lepsze wyniki sprawdza się. Sprawdzimy,
+czy pewni gracze mogą borykać się z tzw. “mindblock’iem”, który blokuje
+nas przed osiąganiem lepszych wyników.</p>
 <p>#TODO: dodaj wiek graczy do naszej próbki danych zeby sprawdzic czy
 wiek tez wplywa na wyniki</p>
-<p>1.1 Podstawowe statystyki</p>
+<div id="podstawowe-statystyki" class="section level2">
+<h2>1.1 Podstawowe statystyki</h2>
 <pre class="r"><code>summary(osu_data)</code></pre>
 <pre><code>##     ranking      nazwa.gracza          celnosc      liczba.zagran   
 ##  Min.   : 1.00   Length:50          Min.   :96.90   Min.   : 49530  
@@ -561,11 +561,13 @@ więcej oznacza lepsze wyniki.</p></li>
 <p>W kolejnych krokach skupimy się na bardziej szczegółowej analizie,
 aby zbudować własny ranking graczy oraz utworzyć pewien podział naszych
 danych na graczy rankingowych oraz turniejowych.</p>
-<ol start="2" style="list-style-type: decimal">
-<li>Porządkowanie liniowe Patrząc na poprzednie wnioski możemy zauważyć,
-że aktualny ranking jest złą miarą umiejętności gracza. Utworzymy teraz
-nowy ranking, który będzie uwzględniał większą ilość zmiennych.</li>
-</ol>
+</div>
+</div>
+<div id="porządkowanie-liniowe" class="section level1">
+<h1>2. Porządkowanie liniowe</h1>
+<p>Patrząc na poprzednie wnioski możemy zauważyć, że aktualny ranking
+jest złą miarą umiejętności gracza. Utworzymy teraz nowy ranking, który
+będzie uwzględniał większą ilość zmiennych.</p>
 <p>Korzystając z zależności, że wykonanie najmniejszego błędu w jednym
 zagraniu skutkuje zmianą z oceny S na A, możemy utworzyć wskaźnik
 stresu. Będzie to stosunek ocen A do ocen S. W ten sposób za pomocą
@@ -729,12 +731,13 @@ faworyzuje graczy o największej ilości punktów pp. Oczywiście punkty pp
 to bardzo ważna stymulanta, która motywuje graczy do ciagłego progressu,
 natomiast faworyzowanie jej może być krzywdzące dla graczy o szerszych
 umiejętnościach niż tylko zdobywanie punktów.</p>
-<ol start="3" style="list-style-type: decimal">
-<li>Analiza skupień Tak jak już wcześniej zauważyliśmy nasze dane można
-podzielić na graczy turniejowych oraz rankingowych. Sprawdźmy czy taki
-podział jest zasadny. Pomoże nam to odpowiedzieć na pytanie czy granie
-więcej prowadzi do lepszych wyników czy nie?</li>
-</ol>
+</div>
+<div id="analiza-skupień" class="section level1">
+<h1>3. Analiza skupień</h1>
+<p>Tak jak już wcześniej zauważyliśmy nasze dane można podzielić na
+graczy turniejowych oraz rankingowych. Sprawdźmy czy taki podział jest
+zasadny. Pomoże nam to odpowiedzieć na pytanie czy granie więcej
+prowadzi do lepszych wyników czy nie?</p>
 <pre class="r"><code>cv &lt;- function(x) {
   sd(x) / mean(x)  # Współczynnik zmienności
 }
@@ -758,6 +761,7 @@ print(wspolczynniki_zmiennosci_df)</code></pre>
 ## Ocena.S             Ocena.S             0.751501616
 ## Ocena.A             Ocena.A             0.377694403
 ## ilosc.medali   ilosc.medali             1.479964002</code></pre>
+</div>
 
 
 

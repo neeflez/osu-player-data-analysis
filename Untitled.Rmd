@@ -11,12 +11,12 @@ osu_data <- read.csv(file_path, header = TRUE, sep = ",")
 osu_data$celnosc <- as.numeric(sub("%", "", osu_data$celnosc))
 head(osu_data)
 ```
-1. Analiza danych.
+# 1. Analiza danych.
 W naszej wstepnej analizie dzięki prostym działaniom na naszych danych odpowiemy sobie na kilka pytań. Spodziewamy się, że część graczy w swojej karierze dostało ban'a więc uwzględnienie takich graczy w naszej analizie może nieco zaburzyć wyniki. Wyeliminujemy więc wartości odstające, które jasno nam określą, których graczy powinniśmy odrzucić. Dodatkowo sprawdzimy korelację pomiędzy ilością medali, a celnością gracza. Wiekszość graczy zakłada, że gracze turniejowi, czyli gracze, którzy zdobywają największą ilość medali są bardziej "consistent" przez co mają większą celność. Sprawdzimy czy będzie to widać na naszych danych. Sprawdzimy również czy słynne hasło "play more", które oznacza, że gdy gramy więcej to osiągamy lepsze wyniki sprawdza się. Sprawdzimy, czy pewni gracze mogą borykać się z tzw. "mindblock'iem", który blokuje nas przed osiąganiem lepszych wyników.
 
 #TODO: dodaj wiek graczy do naszej próbki danych zeby sprawdzic czy wiek tez wplywa na wyniki
 
-1.1 Podstawowe statystyki
+## 1.1 Podstawowe statystyki
 ```{r}
 summary(osu_data)
 #odchylenia standardowe
@@ -106,7 +106,7 @@ Podsumowując nasze wstępne analizy doszliśmy do takich wniosków:
 
 W kolejnych krokach skupimy się na bardziej szczegółowej analizie, aby zbudować własny ranking graczy oraz utworzyć pewien podział naszych danych na graczy rankingowych oraz turniejowych.
 
-2. Porządkowanie liniowe
+# 2. Porządkowanie liniowe
 Patrząc na poprzednie wnioski możemy zauważyć, że aktualny ranking jest złą miarą umiejętności gracza. Utworzymy teraz nowy ranking, który będzie uwzględniał większą ilość zmiennych.
 
 Korzystając z zależności, że wykonanie najmniejszego błędu w jednym zagraniu skutkuje zmianą z oceny S na A, możemy utworzyć wskaźnik stresu. Będzie to stosunek ocen A do ocen S. W ten sposób za pomocą wskaźnika stresu sprawdzimy jak często gracze popełniają błędy w trakcie swoich zagrań. Tym wskaźnik stresu będzie niższy, tym sposób gry gracza będzie spokojniejszy. Skorzystamy z tego wskaźnika jako destymulanta. Chcemy aby wysoko w naszym rankingu byli gracze o niskim wskaźniku stresu.
@@ -165,23 +165,43 @@ print(osu_data_sorted,  row.names = FALSE)
 Po zaimplementowaniu porządkowania liniowego na naszych danych możemy zauważyć, że na pierwszym miejscu widnieje gracz o nazwie użytkownika "MALISZEWSKI". Jest to bez wątpienia najlepszy zawodnik turniejowy, ponieważ posiada aż 55 medali. Jak widać poprzedni ranking niesłusznie faworyzuje graczy o największej ilości punktów pp. Oczywiście punkty pp to bardzo ważna stymulanta, która motywuje graczy do ciagłego progressu, natomiast faworyzowanie jej może być krzywdzące dla graczy o szerszych umiejętnościach niż tylko zdobywanie punktów.
 
 
-3. Analiza skupień
+# 3. Analiza skupień
 Tak jak już wcześniej zauważyliśmy nasze dane można podzielić na graczy turniejowych oraz rankingowych. Sprawdźmy czy taki podział jest zasadny. Pomoże nam to odpowiedzieć na pytanie czy granie więcej prowadzi do lepszych wyników czy nie?
 
 ```{r}
-cv <- function(x) {
-  sd(x) / mean(x)  # Współczynnik zmienności
+kolumny_do_standaryzacji <- osu_data[, c("liczba.pp", "ilosc.medali", "celnosc", "liczba.zagran")]
+
+# Zestandaryzuj wybrane kolumny
+standaryzowane_dane <- scale(kolumny_do_standaryzacji)
+
+# Przekształć macierz z zestandaryzowanymi danymi z powrotem do data frame
+standaryzowane_dane_df <- as.data.frame(standaryzowane_dane)
+
+# Dodaj nazwy kolumn do zestandaryzowanych danych
+colnames(standaryzowane_dane_df) <- c("liczba.pp", "ilosc.medali", "celnosc", "liczba.zagran")
+
+# Jeśli chcesz, możesz dołączyć zestandaryzowane dane z powrotem do oryginalnego data frame
+osu_data <- cbind(osu_data, standaryzowane_dane_df)
+
+# Wyświetl pierwsze wiersze zestandaryzowanych danych
+head(osu_data)
+
+
+# Funkcja do obliczania współczynnika zmienności
+wspolczynnik_zmiennosci <- function(x) {
+  sd(x) / mean(x)
 }
 
-# Obliczanie współczynników zmienności dla wybranych zmiennych
-wspolczynniki_zmiennosci <- sapply(osu_data[, c("celnosc", "liczba.zagran", "liczba.pp", "Ocena.SS", "Ocena.S", "Ocena.A", "ilosc.medali")], cv)
+# Zastosuj funkcję do wybranych kolumn
+wspolczynniki <- sapply(osu_data[, c("liczba.pp", "ilosc.medali", "celnosc", "liczba.zagran")], wspolczynnik_zmiennosci)
 
-# Tworzenie ramki danych z wynikami
-wspolczynniki_zmiennosci_df <- data.frame(
-  zmienna = names(wspolczynniki_zmiennosci),
-  wspolczynnik_zmiennosci = wspolczynniki_zmiennosci
-)
+# Stwórz data frame z wynikami
+wynik_zmiennosci <- data.frame(zmienna = names(wspolczynniki), wspolczynnik_zmiennosci = wspolczynniki)
+print(wynik_zmiennosci)
 
-# Wyświetlanie wyników
-print(wspolczynniki_zmiennosci_df)
+# Oblicz współczynniki korelacji
+wspolczynniki_korelacji <- cor(osu_data[, c("liczba.pp", "ilosc.medali", "celnosc", "liczba.zagran")])
+
+# Wyświetl macierz korelacji
+print(wspolczynniki_korelacji)
 ```
