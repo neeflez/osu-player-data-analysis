@@ -1,4 +1,19 @@
-.Rproj.user
+# R / RStudio
+.Rproj.user/
 .Rhistory
 .RData
 .Ruserdata
+.Rapp.history
+.httr-oauth
+rsconnect/
+
+# R Markdown / knitr intermediates
+*_cache/
+*_files/
+*.knit.md
+*.utf8.md
+/cache/
+
+# OS
+.DS_Store
+Thumbs.db
